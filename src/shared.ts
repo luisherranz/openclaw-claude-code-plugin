@@ -31,15 +31,16 @@ function resolveOpenclawBin(): string {
     return candidate;
   }
 
-  // Strategy 2: which(1) lookup
+  // Strategy 2: which(1) / where.exe lookup
   try {
-    const result = execFileSync("which", ["openclaw"], { encoding: "utf-8", timeout: 5000 });
-    const resolved = result.trim();
+    const whichCmd = process.platform === "win32" ? "where" : "which";
+    const result = execFileSync(whichCmd, ["openclaw"], { encoding: "utf-8", timeout: 5000 });
+    const resolved = result.trim().split(/\r?\n/)[0]; // `where` on Windows may return multiple lines
     if (resolved && existsSync(resolved)) {
       return resolved;
     }
   } catch {
-    // which failed or not found
+    // which/where failed or not found
   }
 
   // Strategy 3: bare command (current behavior)
