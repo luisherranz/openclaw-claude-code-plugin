@@ -1,6 +1,6 @@
 import { execFile, spawn } from "child_process";
 import { Session } from "./session";
-import { generateSessionName } from "./shared";
+import { generateSessionName, getOpenclawBin } from "./shared";
 import type { NotificationRouter } from "./notifications";
 import type { SessionConfig, SessionStatus } from "./types";
 
@@ -340,7 +340,7 @@ export class SessionManager {
     }
 
     const deliverArgs = this.buildDeliverArgs(session.deliverChannel ?? session.originChannel);
-    const child = spawn("openclaw", ["agent", "--agent", agentId, "--message", eventText, ...deliverArgs], {
+    const child = spawn(getOpenclawBin(), ["agent", "--agent", agentId, "--message", eventText, ...deliverArgs], {
       detached: true,
       stdio: "ignore",
     });
@@ -382,7 +382,7 @@ export class SessionManager {
    */
   private fireSystemEventWithRetry(eventText: string, label: string, sessionId: string): void {
     const args = ["system", "event", "--text", eventText, "--mode", "now"];
-    execFile("openclaw", args, { timeout: WAKE_CLI_TIMEOUT_MS }, (err, _stdout, stderr) => {
+    execFile(getOpenclawBin(), args, { timeout: WAKE_CLI_TIMEOUT_MS }, (err, _stdout, stderr) => {
       if (err) {
         console.error(`[SessionManager] System event failed for ${label} session=${sessionId}: ${err.message}`);
         if (stderr) console.error(`[SessionManager] stderr: ${stderr}`);
@@ -390,7 +390,7 @@ export class SessionManager {
         console.warn(`[SessionManager] Scheduling retry in ${WAKE_RETRY_DELAY_MS}ms for ${label} session=${sessionId}`);
         const timer = setTimeout(() => {
           this.pendingRetryTimers.delete(timer);
-          execFile("openclaw", args, { timeout: WAKE_CLI_TIMEOUT_MS }, (retryErr, _retryStdout, retryStderr) => {
+          execFile(getOpenclawBin(), args, { timeout: WAKE_CLI_TIMEOUT_MS }, (retryErr, _retryStdout, retryStderr) => {
             if (retryErr) {
               console.error(`[SessionManager] System event retry also failed for ${label} session=${sessionId}: ${retryErr.message}`);
               if (retryStderr) console.error(`[SessionManager] retry stderr: ${retryStderr}`);

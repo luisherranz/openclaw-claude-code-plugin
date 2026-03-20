@@ -146,6 +146,7 @@ Set values in `~/.openclaw/openclaw.json` under `plugins.entries["openclaw-claud
 | `defaultBudgetUsd` | `number` | `5` | Default budget per session (USD) |
 | `permissionMode` | `string` | `"bypassPermissions"` | `"default"` / `"plan"` / `"acceptEdits"` / `"bypassPermissions"` |
 | `skipSafetyChecks` | `boolean` | `false` | Skip ALL pre-launch safety guards (autonomy skill, heartbeat, HEARTBEAT.md, agentChannels). For dev/testing only. |
+| `openclawBin` | `string` | `"openclaw"` | Absolute path to the `openclaw` binary. Set this when openclaw is not on the runtime PATH (e.g. nvm, asdf, fnm, Volta). See [Binary resolution](#binary-resolution) below. |
 
 ### Example
 
@@ -165,6 +166,27 @@ Set values in `~/.openclaw/openclaw.json` under `plugins.entries["openclaw-claud
             "/home/user/agent-seo": "telegram|seo-bot|123456789",
             "/home/user/agent-main": "telegram|main-bot|123456789"
           }
+        }
+      }
+    }
+  }
+}
+```
+
+### Binary resolution
+
+The plugin shells out to `openclaw` in three places (sending messages, waking agents, firing system events). All three use a shared `getOpenclawBin()` helper that resolves the binary path **once on first call** and caches the result for the lifetime of the process.
+
+Without config, `getOpenclawBin()` falls back to the bare string `"openclaw"`, relying on the runtime PATH. Set `openclawBin` explicitly when openclaw is not on the PATH of the process running the plugin (e.g. when using nvm, asdf, fnm, or Volta):
+
+```jsonc
+{
+  "plugins": {
+    "entries": {
+      "openclaw-claude-code-plugin": {
+        "enabled": true,
+        "config": {
+          "openclawBin": "/Users/you/.nvm/versions/node/v22.21.1/bin/openclaw"
         }
       }
     }

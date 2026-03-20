@@ -45,7 +45,10 @@ export function setPluginConfig(config: Partial<PluginConfig>): void {
     fallbackChannel: config.fallbackChannel,
     agentChannels,
     maxAutoResponds: config.maxAutoResponds ?? 10,
+    openclawBin: config.openclawBin,
   };
+  // Reset cache so the new openclawBin value takes effect on next call.
+  _resolvedOpenclawBin = null;
 }
 
 export function setSessionManager(sm: SessionManager | null): void {
@@ -54,6 +57,37 @@ export function setSessionManager(sm: SessionManager | null): void {
 
 export function setNotificationRouter(nr: NotificationRouter | null): void {
   notificationRouter = nr;
+}
+
+/** Cached resolved path for the openclaw binary (null = not yet resolved). */
+let _resolvedOpenclawBin: string | null = null;
+
+/**
+ * Resolve the path to the openclaw binary. The result is cached after the
+ * first call so resolution only runs once per config cycle.
+ *
+ * Resolution order:
+ *  1. Explicit `openclawBin` from plugin config.
+ *  2. Falls back to the bare string "openclaw" (relies on PATH).
+ */
+export function getOpenclawBin(): string {
+  if (_resolvedOpenclawBin !== null) return _resolvedOpenclawBin;
+
+  // 1. Explicit config override.
+  if (pluginConfig.openclawBin) {
+    console.log(`[openclaw-bin] Using configured path: ${pluginConfig.openclawBin}`);
+    _resolvedOpenclawBin = pluginConfig.openclawBin;
+    return _resolvedOpenclawBin;
+  }
+
+  // 2. Fallback — rely on PATH (backward compatible).
+  _resolvedOpenclawBin = "openclaw";
+  return _resolvedOpenclawBin;
+}
+
+/** Reset the cached openclaw binary path (called automatically by setPluginConfig). */
+export function resetOpenclawBinCache(): void {
+  _resolvedOpenclawBin = null;
 }
 
 /**

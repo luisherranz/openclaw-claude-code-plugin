@@ -64,6 +64,10 @@
         "type": "boolean",
         "default": false,
         "description": "Skip ALL pre-launch safety guards (autonomy skill, heartbeat, HEARTBEAT.md, agentChannels). Use only for development/testing."
+      },
+      "openclawBin": {
+        "type": "string",
+        "description": "Absolute path to the openclaw binary. Auto-detected if not set. Useful when openclaw is installed via nvm and not in the default PATH."
       }
     }
   }
