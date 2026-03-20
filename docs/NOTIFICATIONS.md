@@ -21,7 +21,7 @@ The plugin is agent-agnostic. How agents react to 🔔 and ✅ is configured in 
 ## Wake Mechanism
 
 ### Primary: Detached Spawn
-`spawn("openclaw", ["agent", "--agent", id, "--message", text, "--deliver", ...], { detached: true })` + `child.unref()`
+`spawn(getOpenclawBin(), ["agent", "--agent", id, "--message", text, "--deliver", ...], { detached: true })` + `child.unref()`
 - Non-blocking, agent response routed to Telegram via --deliver
 - Used for 🔔 waiting and ✅ completed
 

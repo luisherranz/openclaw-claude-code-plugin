@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { Type } from "@sinclair/typebox";
-import { sessionManager, pluginConfig, resolveAgentChannel, resolveAgentId } from "../shared";
+import { sessionManager, pluginConfig, resolveAgentChannel, resolveAgentId, getOpenclawBin } from "../shared";
 import type { OpenClawPluginToolContext } from "../types";
 
 export function makeClaudeLaunchTool(ctx: OpenClawPluginToolContext) {
@@ -287,9 +287,9 @@ export function makeClaudeLaunchTool(ctx: OpenClawPluginToolContext) {
                       `3. Launch a Claude Code session to restart the Gateway and wake you back:`,
                       ``,
                       `   claude_launch(`,
-                      `     prompt="STEP 1: Restart Gateway to activate heartbeat: openclaw gateway restart`,
+                      `     prompt="STEP 1: Restart Gateway to activate heartbeat: ${getOpenclawBin()} gateway restart`,
                       `             STEP 2: Wait 5 seconds`,
-                      `             STEP 3: Wake the agent: openclaw agent --agent ${agentId} --message 'Heartbeat configured, continuing task'`,
+                      `             STEP 3: Wake the agent: ${getOpenclawBin()} agent --agent ${agentId} --message 'Heartbeat configured, continuing task'`,
                       `             STEP 4: Continue the original task: [USER_TASK]",`,
                       `     name="setup-heartbeat"`,
                       `   )`,
@@ -388,9 +388,9 @@ export function makeClaudeLaunchTool(ctx: OpenClawPluginToolContext) {
                     `3. Launch Claude Code to restart Gateway:`,
                     ``,
                     `   claude_launch(`,
-                    `     prompt="STEP 1: Restart Gateway: openclaw gateway restart`,
+                    `     prompt="STEP 1: Restart Gateway: ${getOpenclawBin()} gateway restart`,
                     `             STEP 2: Wait 5s`,
-                    `             STEP 3: Wake agent: openclaw agent --message 'HEARTBEAT.md configured'`,
+                    `             STEP 3: Wake agent: ${getOpenclawBin()} agent --message 'HEARTBEAT.md configured'`,
                     `             STEP 4: Continue task: [USER_TASK]",`,
                     `     name="setup-heartbeat-md"`,
                     `   )`,
