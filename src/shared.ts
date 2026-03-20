@@ -1,7 +1,3 @@
-import { execSync } from "child_process";
-import { existsSync, readdirSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
 import type { Session } from "./session";
 import type { SessionManager, SessionMetrics } from "./session-manager";
 import type { NotificationRouter } from "./notifications";
@@ -68,13 +64,11 @@ let _resolvedOpenclawBin: string | null = null;
 
 /**
  * Resolve the path to the openclaw binary. The result is cached after the
- * first successful resolution so detection only runs once per config cycle.
+ * first call so resolution only runs once per config cycle.
  *
  * Resolution order:
  *  1. Explicit `openclawBin` from plugin config.
- *  2. `which openclaw` — works when PATH is correctly set.
- *  3. Scan common nvm paths under $NVM_DIR or ~/.nvm, picking the newest version.
- *  4. Falls back to the bare string "openclaw" (backward compatible).
+ *  2. Falls back to the bare string "openclaw" (relies on PATH).
  */
 export function getOpenclawBin(): string {
   if (_resolvedOpenclawBin !== null) return _resolvedOpenclawBin;
@@ -86,53 +80,7 @@ export function getOpenclawBin(): string {
     return _resolvedOpenclawBin;
   }
 
-  // 2. Try `which openclaw` (Unix only).
-  if (process.platform !== "win32") {
-    try {
-      const result = execSync("which openclaw", {
-        encoding: "utf-8",
-        timeout: 5_000,
-        stdio: ["pipe", "pipe", "pipe"],
-      }).trim();
-      if (result && existsSync(result)) {
-        console.log(`[openclaw-bin] Resolved via which: ${result}`);
-        _resolvedOpenclawBin = result;
-        return _resolvedOpenclawBin;
-      }
-    } catch {
-      // not found via which — continue
-    }
-  }
-
-  // 3. Scan common nvm paths using Node.js APIs (no shell command, no injection risk).
-  const nvmDir = process.env.NVM_DIR || join(homedir(), ".nvm");
-  const versionsDir = join(nvmDir, "versions", "node");
-  if (existsSync(versionsDir)) {
-    try {
-      // List installed Node versions, sort newest first (semver descending).
-      const versions = readdirSync(versionsDir)
-        .filter((v) => v.startsWith("v"))
-        .sort((a, b) => {
-          const parse = (s: string) => s.slice(1).split(".").map(Number);
-          const [aMajor = 0, aMinor = 0, aPatch = 0] = parse(a);
-          const [bMajor = 0, bMinor = 0, bPatch = 0] = parse(b);
-          return (bMajor - aMajor) || (bMinor - aMinor) || (bPatch - aPatch);
-        });
-      for (const version of versions) {
-        const candidate = join(versionsDir, version, "bin", "openclaw");
-        if (existsSync(candidate)) {
-          console.log(`[openclaw-bin] Resolved via nvm scan: ${candidate}`);
-          _resolvedOpenclawBin = candidate;
-          return _resolvedOpenclawBin;
-        }
-      }
-    } catch {
-      // nvm scan failed — continue to fallback
-    }
-  }
-
-  // 4. Fallback — rely on PATH (backward compatible).
-  console.log(`[openclaw-bin] Falling back to bare "openclaw" (relies on PATH)`);
+  // 2. Fallback — rely on PATH (backward compatible).
   _resolvedOpenclawBin = "openclaw";
   return _resolvedOpenclawBin;
 }

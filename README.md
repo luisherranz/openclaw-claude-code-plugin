@@ -146,7 +146,7 @@ Set values in `~/.openclaw/openclaw.json` under `plugins.entries["openclaw-claud
 | `defaultBudgetUsd` | `number` | `5` | Default budget per session (USD) |
 | `permissionMode` | `string` | `"bypassPermissions"` | `"default"` / `"plan"` / `"acceptEdits"` / `"bypassPermissions"` |
 | `skipSafetyChecks` | `boolean` | `false` | Skip ALL pre-launch safety guards (autonomy skill, heartbeat, HEARTBEAT.md, agentChannels). For dev/testing only. |
-| `openclawBin` | `string` | auto-detected | Absolute path to the `openclaw` binary. See [Binary auto-detection](#binary-auto-detection-nvm--path) below. |
+| `openclawBin` | `string` | `"openclaw"` | Absolute path to the `openclaw` binary. Set this when openclaw is not on the runtime PATH (e.g. nvm, asdf, fnm, Volta). See [Binary resolution](#binary-resolution) below. |
 
 ### Example
 
@@ -173,24 +173,11 @@ Set values in `~/.openclaw/openclaw.json` under `plugins.entries["openclaw-claud
 }
 ```
 
-### Binary auto-detection (nvm / PATH)
+### Binary resolution
 
 The plugin shells out to `openclaw` in three places (sending messages, waking agents, firing system events). All three use a shared `getOpenclawBin()` helper that resolves the binary path **once on first call** and caches the result for the lifetime of the process.
 
-**Resolution order:**
-
-1. **Explicit config** — if `openclawBin` is set in the plugin config, that path is used immediately and no detection is attempted.
-2. **`which openclaw`** (Unix only) — if `openclaw` is in the active PATH (e.g. a normal shell session where nvm has been sourced), the resolved absolute path is used.
-3. **nvm path scan** — if `which` fails (typical in Claude Code agent sessions, which run with a clean environment and don't inherit the user's shell configuration), the plugin scans `$NVM_DIR/versions/node/` (or `~/.nvm/versions/node/` when `NVM_DIR` is not set), lists installed Node versions sorted newest-first, and returns the first version that contains an `openclaw` binary in its `bin/` directory.
-4. **Bare `"openclaw"` fallback** — if none of the above succeed, the bare string is used, which relies on the runtime PATH.
-
-The resolved path is logged at startup so you can verify which strategy was used:
-
-```
-[openclaw-bin] Resolved via nvm scan: /Users/you/.nvm/versions/node/v22.21.1/bin/openclaw
-```
-
-**When to set `openclawBin` explicitly:** if you use multiple Node versions with nvm and the nvm scan picks the wrong version, or if openclaw is installed via a tool other than nvm (e.g. a global npm prefix, asdf, fnm, Volta):
+Without config, `getOpenclawBin()` falls back to the bare string `"openclaw"`, relying on the runtime PATH. Set `openclawBin` explicitly when openclaw is not on the PATH of the process running the plugin (e.g. when using nvm, asdf, fnm, or Volta):
 
 ```jsonc
 {
