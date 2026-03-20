@@ -117,4 +117,10 @@ export interface PluginConfig {
    * Default: false.
    */
   skipSafetyChecks?: boolean;
+
+  /**
+   * Absolute path to the openclaw binary. Auto-detected if not set.
+   * Useful when openclaw is installed via nvm and not in the default PATH.
+   */
+  openclawBin?: string;
 }
