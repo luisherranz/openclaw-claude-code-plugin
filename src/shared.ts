@@ -1,3 +1,6 @@
+import { existsSync } from "fs";
+import { execFileSync } from "child_process";
+import { dirname, join } from "path";
 import type { Session } from "./session";
 import type { SessionManager, SessionMetrics } from "./session-manager";
 import type { NotificationRouter } from "./notifications";
@@ -5,6 +8,57 @@ import type { PluginConfig } from "./types";
 
 export let sessionManager: SessionManager | null = null;
 export let notificationRouter: NotificationRouter | null = null;
+
+/**
+ * Resolve the absolute path to the `openclaw` CLI binary.
+ *
+ * When OpenClaw is installed via npm under nvm, the binary lives in a
+ * version-specific directory (e.g. ~/.nvm/versions/node/v22/bin/openclaw).
+ * Child processes and Claude Code agent shells may not have nvm in their
+ * PATH, causing "command not found" errors when invoking bare `openclaw`.
+ *
+ * Resolution strategy:
+ * 1. Check the same bin directory as the running Node.js binary (most reliable
+ *    since npm installs openclaw alongside node)
+ * 2. Use `which openclaw` to search PATH
+ * 3. Fall back to bare "openclaw" (relies on PATH at runtime)
+ */
+function resolveOpenclawBin(): string {
+  // Strategy 1: Same directory as the Node.js binary
+  const nodeBinDir = dirname(process.execPath);
+  const candidate = join(nodeBinDir, "openclaw");
+  if (existsSync(candidate)) {
+    return candidate;
+  }
+
+  // Strategy 2: which(1) lookup
+  try {
+    const result = execFileSync("which", ["openclaw"], { encoding: "utf-8", timeout: 5000 });
+    const resolved = result.trim();
+    if (resolved && existsSync(resolved)) {
+      return resolved;
+    }
+  } catch {
+    // which failed or not found
+  }
+
+  // Strategy 3: bare command (current behavior)
+  return "openclaw";
+}
+
+let _openclawBin: string | undefined;
+
+/**
+ * Get the resolved absolute path to the `openclaw` CLI binary.
+ * Caches the result after the first call.
+ */
+export function getOpenclawBin(): string {
+  if (_openclawBin === undefined) {
+    _openclawBin = resolveOpenclawBin();
+    console.log(`[openclaw-bin] Resolved openclaw binary: ${_openclawBin}`);
+  }
+  return _openclawBin;
+}
 
 /**
  * Plugin config — populated at service start from api.getConfig().
